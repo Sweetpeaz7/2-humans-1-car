@@ -1,4 +1,3 @@
-
 let trips = [];
 let fuelLogs = [];
 
@@ -8,30 +7,22 @@ function logTrip() {
     const startOdometer = parseFloat(document.getElementById('start-odometer').value);
     const endOdometer = parseFloat(document.getElementById('end-odometer').value);
     const notes = document.getElementById('notes').value;
-
-    if (driver && date && !isNaN(startOdometer) && !isNaN(endOdometer)) {
-        const kilometers = endOdometer - startOdometer;
-        const fuelUsed = (kilometers / 100) * 9;
-        const fuelCost = fuelUsed * 1.793;
-
-        trips.push({ driver, date, startOdometer, endOdometer, kilometers, fuelUsed, fuelCost, notes });
-        alert('Trip logged successfully!');
-    } else {
-        alert('Please fill in all fields.');
-    }
+    
+    const kilometers = endOdometer - startOdometer;
+    const fuelUsed = kilometers * 0.09; // 9L per 100km
+    const fuelCost = fuelUsed * 1.793; // Brisbane average petrol price
+    
+    trips.push({ driver, date, startOdometer, endOdometer, kilometers, fuelUsed, fuelCost, notes });
+    alert('Trip logged successfully!');
 }
 
 function logFuel() {
-    const driver = document.getElementById('driver').value;
-    const date = document.getElementById('date').value;
-    const fuelCost = parseFloat(prompt('Enter fuel cost:'));
-
-    if (driver && date && !isNaN(fuelCost)) {
-        fuelLogs.push({ driver, date, fuelCost });
-        alert('Fuel log added successfully!');
-    } else {
-        alert('Please fill in all fields.');
-    }
+    const driver = document.getElementById('fuel-driver').value;
+    const date = document.getElementById('fuel-date').value;
+    const amountSpent = parseFloat(document.getElementById('fuel-amount').value);
+    
+    fuelLogs.push({ driver, date, amountSpent });
+    alert('Fuel spend logged successfully!');
 }
 
 function exportCSV() {
@@ -39,7 +30,12 @@ function exportCSV() {
     trips.forEach(trip => {
         csvContent += `${trip.driver},${trip.date},${trip.startOdometer},${trip.endOdometer},${trip.kilometers},${trip.fuelUsed},${trip.fuelCost},${trip.notes}\n`;
     });
-
+    
+    csvContent += "\nDriver,Date,Amount Spent\n";
+    fuelLogs.forEach(log => {
+        csvContent += `${log.driver},${log.date},${log.amountSpent}\n`;
+    });
+    
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -51,79 +47,90 @@ function exportCSV() {
 function showPieCharts() {
     const container = document.getElementById('charts-container');
     container.innerHTML = '';
-
-    const drivers = [...new Set(trips.map(trip => trip.driver))];
-    const totalKilometers = drivers.map(driver => {
-        return trips.filter(trip => trip.driver === driver).reduce((sum, trip) => sum + trip.kilometers, 0);
+    
+    const totalKilometers = trips.reduce((sum, trip) => sum + trip.kilometers, 0);
+    const totalFuelCost = trips.reduce((sum, trip) => sum + trip.fuelCost, 0);
+    
+    const driverKilometers = {};
+    const driverFuelCost = {};
+    
+    trips.forEach(trip => {
+        if (!driverKilometers[trip.driver]) driverKilometers[trip.driver] = 0;
+        if (!driverFuelCost[trip.driver]) driverFuelCost[trip.driver] = 0;
+        
+        driverKilometers[trip.driver] += trip.kilometers;
+        driverFuelCost[trip.driver] += trip.fuelCost;
     });
-    const totalFuelCost = drivers.map(driver => {
-        return trips.filter(trip => trip.driver === driver).reduce((sum, trip) => sum + trip.fuelCost, 0);
-    });
-
-    const kilometersChart = document.createElement('div');
-    kilometersChart.innerHTML = '<h2>Kilometers Driven</h2>';
-    container.appendChild(kilometersChart);
-
-    const fuelCostChart = document.createElement('div');
-    fuelCostChart.innerHTML = '<h2>Fuel Cost</h2>';
-    container.appendChild(fuelCostChart);
-
-    // Pie chart for kilometers driven
-    const kilometersData = {
-        labels: drivers,
-        datasets: [{
-            data: totalKilometers,
-            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
-        }]
-    };
-    const kilometersCtx = document.createElement('canvas');
-    kilometersChart.appendChild(kilometersCtx);
-    new Chart(kilometersCtx, {
-        type: 'pie',
-        data: kilometersData
-    });
-
-    // Pie chart for fuel cost
-    const fuelCostData = {
-        labels: drivers,
-        datasets: [{
-            data: totalFuelCost,
-            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
-        }]
-    };
-    const fuelCostCtx = document.createElement('canvas');
-    fuelCostChart.appendChild(fuelCostCtx);
-    new Chart(fuelCostCtx, {
-        type: 'pie',
-        data: fuelCostData
-    });
+    
+    const kilometersData = Object.keys(driverKilometers).map(driver => ({ driver, value: driverKilometers[driver] }));
+    const fuelCostData = Object.keys(driverFuelCost).map(driver => ({ driver, value: driverFuelCost[driver] }));
+    
+    createPieChart(container, 'Kilometers Driven', kilometersData);
+    createPieChart(container, 'Fuel Cost', fuelCostData);
 }
 
 function showLineChart() {
     const container = document.getElementById('charts-container');
     container.innerHTML = '';
+    
+    const data = trips.map(trip => ({ date: trip.date, kilometers: trip.kilometers, fuelCost: trip.fuelCost }));
+    
+    createLineChart(container, data);
+}
 
-    const drivers = [...new Set(trips.map(trip => trip.driver))];
-    const labels = trips.map(trip => trip.date);
-
-    const datasets = drivers.map(driver => {
-        return {
-            label: driver,
-            data: trips.filter(trip => trip.driver === driver).map(trip => trip.kilometers),
-            borderColor: '#' + Math.floor(Math.random()*16777215).toString(16),
-            fill: false
-        };
+function createPieChart(container, title, data) {
+    const chartContainer = document.createElement('div');
+    chartContainer.style.width = '400px';
+    chartContainer.style.height = '400px';
+    chartContainer.style.display = 'inline-block';
+    
+    const chartTitle = document.createElement('h3');
+    chartTitle.textContent = title;
+    chartContainer.appendChild(chartTitle);
+    
+    const canvas = document.createElement('canvas');
+    chartContainer.appendChild(canvas);
+    container.appendChild(chartContainer);
+    
+    new Chart(canvas, {
+        type: 'pie',
+        data: {
+            labels: data.map(item => item.driver),
+            datasets: [{
+                data: data.map(item => item.value),
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+            }]
+        }
     });
+}
 
-    const lineChartData = {
-        labels: labels,
-        datasets: datasets
-    };
-
-    const lineChartCtx = document.createElement('canvas');
-    container.appendChild(lineChartCtx);
-    new Chart(lineChartCtx, {
+function createLineChart(container, data) {
+    const chartContainer = document.createElement('div');
+    chartContainer.style.width = '800px';
+    chartContainer.style.height = '400px';
+    
+    const canvas = document.createElement('canvas');
+    chartContainer.appendChild(canvas);
+    container.appendChild(chartContainer);
+    
+    new Chart(canvas, {
         type: 'line',
-        data: lineChartData
+        data: {
+            labels: data.map(item => item.date),
+            datasets: [
+                {
+                    label: 'Kilometers Driven',
+                    data: data.map(item => item.kilometers),
+                    borderColor: '#FF6384',
+                    fill: false
+                },
+                {
+                    label: 'Fuel Cost',
+                    data: data.map(item => item.fuelCost),
+                    borderColor: '#36A2EB',
+                    fill: false
+                }
+            ]
+        }
     });
 }

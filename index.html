@@ -21,21 +21,34 @@
         <label for="start-odometer">Start Odometer:</label>
         <input type="number" id="start-odometer" name="start-odometer">
     </div>
-    
-<div>
-    <label for="end-odometer">End Odometer:</label>
-    <input type="number" id="end-odometer" name="end-odometer">
-</div>
-
+    <div>
+        <label for="end-odometer">End Odometer:</label>
+        <input type="number" id="end-odometer" name="end-odometer">
+    </div>
     <div>
         <label for="notes">Notes:</label>
         <input type="text" id="notes" name="notes">
     </div>
     <button onclick="logTrip()">Log Trip</button>
-    <button onclick="logFuel()">Log Fuel</button>
     <button onclick="exportCSV()">Export to CSV</button>
     <button onclick="showPieCharts()">Show Pie Charts</button>
     <button onclick="showLineChart()">Show Line Chart</button>
+
+    <h2>Log Fuel Spend</h2>
+    <div>
+        <label for="fuel-driver">Driver:</label>
+        <input type="text" id="fuel-driver" name="fuel-driver">
+    </div>
+    <div>
+        <label for="fuel-date">Date:</label>
+        <input type="date" id="fuel-date" name="fuel-date">
+    </div>
+    <div>
+        <label for="fuel-amount">Amount Spent (in dollars):</label>
+        <input type="number" id="fuel-amount" name="fuel-amount">
+    </div>
+    <button onclick="logFuel()">Log Fuel</button>
+
     <div id="charts-container"></div>
     <script src="script.js"></script>
 </body>

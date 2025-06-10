@@ -1,26 +1,28 @@
-
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
 }
 
-h1 {
+h1, h2 {
     color: #333;
 }
 
-label {
-    display: block;
-    margin-top: 10px;
-}
-
-input {
+div {
     margin-bottom: 10px;
 }
 
+label {
+    display: inline-block;
+    width: 150px;
+}
+
+input {
+    padding: 5px;
+    width: 200px;
+}
+
 button {
-    margin-top: 10px;
-    margin-right: 10px;
-    padding: 10px;
+    padding: 10px 15px;
     background-color: #007BFF;
     color: white;
     border: none;
